@@ -8,18 +8,18 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 
-import StudentDashboard from "./pages/StudentDashboard";
-import SearchChemicals from "./pages/SearchChemicals";
-import OrderRequestForm from "./pages/OrderRequestForm";
+// import StudentDashboard from "./pages/StudentDashboard";
+// import SearchChemicals from "./pages/SearchChemicals";
+// import OrderRequestForm from "./pages/OrderRequestForm";
 
-import LabManagerDashboard from "./pages/LabManagerDashboard";
-import ManageChemicals from "./pages/ManageChemicals";
-import ReviewOrders from "./pages/ReviewOrders";
+// import LabManagerDashboard from "./pages/LabManagerDashboard";
+// import ManageChemicals from "./pages/ManageChemicals";
+// import ReviewOrders from "./pages/ReviewOrders";
 
-import DeptHeadDashboard from "./pages/DeptHeadDashboard";
-import ViewChemicals from "./pages/ViewChemicals";
-import ActivityLogPage from "./pages/ActivityLogPage";
-import ManageUsers from "./pages/ManageUsers";
+// import DeptHeadDashboard from "./pages/DeptHeadDashboard";
+// import ViewChemicals from "./pages/ViewChemicals";
+// import ActivityLogPage from "./pages/ActivityLogPage";
+// import ManageUsers from "./pages/ManageUsers";
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -48,7 +48,7 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
 
           {/* student pages */}
-          <Route
+          {/* <Route
             path="/student"
             element={
               <ProtectedRoute currentUser={currentUser} allowedRoles={["student"]}>
@@ -71,10 +71,10 @@ function App() {
                 <OrderRequestForm />
               </ProtectedRoute>
             }
-          />
+          /> */}
 
           {/* lab manager pages */}
-          <Route
+          {/* <Route
             path="/manager"
             element={
               <ProtectedRoute currentUser={currentUser} allowedRoles={["labmanager"]}>
@@ -97,10 +97,10 @@ function App() {
                 <ReviewOrders />
               </ProtectedRoute>
             }
-          />
+          /> */}
 
           {/* department head pages */}
-          <Route
+          {/* <Route
             path="/depthead"
             element={
               <ProtectedRoute currentUser={currentUser} allowedRoles={["depthead"]}>
@@ -131,7 +131,7 @@ function App() {
                 <ManageUsers />
               </ProtectedRoute>
             }
-          />
+          /> */}
 
           {/* default route */}
           <Route path="/" element={<Navigate to="/login" />} />
