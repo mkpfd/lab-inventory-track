@@ -5,8 +5,6 @@ const User = require("../models/User");
 const ActivityLog = require("../models/ActivityLog");
 const { verifyToken, checkRole } = require("../middleware/authMiddleware");
 
-// all of these are dept head only - that's who's in charge of accounts
-
 router.get("/", verifyToken, checkRole(["depthead"]), async (req, res) => {
   try {
     const allUsers = await User.find().select("-password").sort({ name: 1 });
