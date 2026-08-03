@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true }, // stored hashed, never plaintext
   role: {
     type: String,
-    enum: ["student", "labmanager", "depthead"],
+    enum: ["student", "labmanager", "depthead", "admin"],
     default: "student",
   },
   createdAt: { type: Date, default: Date.now },

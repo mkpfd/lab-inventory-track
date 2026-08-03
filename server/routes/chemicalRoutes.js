@@ -72,6 +72,67 @@ router.post("/", verifyToken, checkRole(["labmanager"]), async (req, res) => {
   }
 });
 
+router.post("/bulk", verifyToken, checkRole(["labmanager"]), async (req, res) => {
+  try {
+    const { chemicals } = req.body;
+
+    if (!Array.isArray(chemicals) || chemicals.length === 0) {
+      return res.status(400).json({ message: "Please provide at least one chemical row" });
+    }
+
+    const validationErrors = [];
+    const normalizedChemicals = chemicals.map((chemical, index) => {
+      const rowNumber = index + 2;
+      const normalized = {
+        name: String(chemical.name || "").trim(),
+        casNumber: String(chemical.casNumber || "").trim(),
+        quantity: Number(chemical.quantity),
+        unit: String(chemical.unit || "").trim(),
+        location: String(chemical.location || "").trim(),
+        supplier: String(chemical.supplier || "").trim(),
+        purchaseDate: new Date(chemical.purchaseDate),
+        expiryDate: new Date(chemical.expiryDate),
+        minimumStockThreshold: Number(chemical.minimumStockThreshold),
+        isStockedOut: chemical.isStockedOut === true || chemical.isStockedOut === "true",
+      };
+
+      if (!normalized.name) validationErrors.push(`Row ${rowNumber}: name is required`);
+      if (!normalized.casNumber) validationErrors.push(`Row ${rowNumber}: casNumber is required`);
+      if (!Number.isFinite(normalized.quantity)) validationErrors.push(`Row ${rowNumber}: quantity must be a number`);
+      if (!normalized.unit) validationErrors.push(`Row ${rowNumber}: unit is required`);
+      if (!normalized.location) validationErrors.push(`Row ${rowNumber}: location is required`);
+      if (!normalized.supplier) validationErrors.push(`Row ${rowNumber}: supplier is required`);
+      if (Number.isNaN(normalized.purchaseDate.getTime())) validationErrors.push(`Row ${rowNumber}: purchaseDate must be a valid date`);
+      if (Number.isNaN(normalized.expiryDate.getTime())) validationErrors.push(`Row ${rowNumber}: expiryDate must be a valid date`);
+      if (!Number.isFinite(normalized.minimumStockThreshold)) {
+        validationErrors.push(`Row ${rowNumber}: minimumStockThreshold must be a number`);
+      }
+
+      return normalized;
+    });
+
+    if (validationErrors.length > 0) {
+      return res.status(400).json({ message: "CSV data has errors", errors: validationErrors });
+    }
+
+    const createdChemicals = await Chemical.insertMany(normalizedChemicals);
+
+    await ActivityLog.create({
+      userName: req.user.name,
+      action: `Imported ${createdChemicals.length} chemicals from CSV`,
+    });
+
+    res.status(201).json({
+      message: `Imported ${createdChemicals.length} chemicals successfully`,
+      count: createdChemicals.length,
+      chemicals: createdChemicals,
+    });
+  } catch (error) {
+    console.log("Error importing chemicals in bulk:", error);
+    res.status(500).json({ message: "Something went wrong importing the CSV" });
+  }
+});
+
 router.put("/:id", verifyToken, checkRole(["labmanager"]), async (req, res) => {
   try {
     const updatedChemical = await Chemical.findByIdAndUpdate(req.params.id, req.body, {

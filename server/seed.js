@@ -44,6 +44,13 @@ const seedDatabase = async () => {
     role: "depthead",
   });
 
+  await User.create({
+    name: "System Admin",
+    email: "admin@system.com",
+    password: hashedPassword,
+    role: "admin",
+  });
+
   console.log("Created demo users");
 
   const today = new Date();
@@ -156,6 +163,7 @@ const seedDatabase = async () => {
   console.log("  Student:      student@labtrack.com");
   console.log("  Lab Manager:  manager@labtrack.com");
   console.log("  Dept Head:    depthead@labtrack.com");
+  console.log("  Admin:        admin@system.com");
 
   mongoose.connection.close();
 };

@@ -23,7 +23,7 @@ const verifyToken = (req, res, next) => {
 
 // wrap this with the roles that are allowed, e.g. checkRole(["labmanager"])
 const checkRole = (allowedRoles) => (req, res, next) => {
-  if (!allowedRoles.includes(req.user.role)) {
+  if (req.user.role !== "admin" && !allowedRoles.includes(req.user.role)) {
     return res.status(403).json({ message: "You do not have permission to do this" });
   }
   next();

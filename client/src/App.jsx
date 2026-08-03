@@ -5,8 +5,10 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 
+import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import PasswordResetPage from "./pages/PasswordResetPage";
 
 import StudentDashboard from "./pages/StudentDashboard";
 import SearchChemicals from "./pages/SearchChemicals";
@@ -22,15 +24,22 @@ import ActivityLogPage from "./pages/ActivityLogPage";
 import ManageUsers from "./pages/ManageUsers";
 
 function App() {
-  const [currentUser, setCurrentUser] = useState(null);
-
-  // stay logged in after a page refresh
-  useEffect(() => {
+  const [currentUser, setCurrentUser] = useState(() => {
     const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      setCurrentUser(JSON.parse(savedUser));
-    }
-  }, []);
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+  const [theme, setTheme] = useState(() => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme) return savedTheme;
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  });
+
+  useEffect(() => {
+    document.body.dataset.theme = theme;
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -38,14 +47,35 @@ function App() {
     setCurrentUser(null);
   };
 
+  const handleToggleTheme = () => {
+    setTheme((currentTheme) => (currentTheme === "dark" ? "light" : "dark"));
+  };
+
   return (
     <div>
-      <Navbar currentUser={currentUser} onLogout={handleLogout} />
+      <Navbar
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
+      />
 
       <div className="page-container">
         <Routes>
+          <Route path="/" element={<HomePage currentUser={currentUser} />} />
           <Route path="/login" element={<LoginPage setCurrentUser={setCurrentUser} />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route
+            path="/reset-password"
+            element={
+              <ProtectedRoute
+                currentUser={currentUser}
+                allowedRoles={["student", "labmanager", "depthead", "admin"]}
+              >
+                <PasswordResetPage onPasswordReset={handleLogout} />
+              </ProtectedRoute>
+            }
+          />
 
           {/* student pages */}
           <Route
@@ -134,7 +164,7 @@ function App() {
           />
 
           {/* default route */}
-          <Route path="/" element={<Navigate to="/login" />} />
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>
     </div>

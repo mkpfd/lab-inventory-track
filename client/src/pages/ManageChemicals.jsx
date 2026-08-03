@@ -18,6 +18,9 @@ function ManageChemicals() {
   const [chemicals, setChemicals] = useState([]);
   const [formData, setFormData] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null); // null = adding a new chemical
+  const [csvFile, setCsvFile] = useState(null);
+  const [bulkStatusMessage, setBulkStatusMessage] = useState("");
+  const [bulkErrorMessage, setBulkErrorMessage] = useState("");
 
   useEffect(() => {
     loadChemicals();
@@ -53,6 +56,113 @@ function ManageChemicals() {
       loadChemicals();
     } catch (error) {
       console.log("Error saving chemical:", error);
+    }
+  };
+
+  const splitCsvLine = (line) => {
+    const values = [];
+    let currentValue = "";
+    let insideQuotes = false;
+
+    for (let index = 0; index < line.length; index += 1) {
+      const character = line[index];
+
+      if (character === '"') {
+        if (insideQuotes && line[index + 1] === '"') {
+          currentValue += '"';
+          index += 1;
+        } else {
+          insideQuotes = !insideQuotes;
+        }
+      } else if (character === "," && !insideQuotes) {
+        values.push(currentValue.trim());
+        currentValue = "";
+      } else {
+        currentValue += character;
+      }
+    }
+
+    values.push(currentValue.trim());
+    return values;
+  };
+
+  const parseCsvText = (csvText) => {
+    const lines = csvText
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    if (lines.length < 2) {
+      throw new Error("CSV file must include a header row and at least one data row");
+    }
+
+    const headers = splitCsvLine(lines[0]).map((header) => header.trim());
+    const requiredHeaders = [
+      "name",
+      "casNumber",
+      "quantity",
+      "unit",
+      "location",
+      "supplier",
+      "purchaseDate",
+      "expiryDate",
+      "minimumStockThreshold",
+    ];
+
+    const missingHeaders = requiredHeaders.filter(
+      (requiredHeader) => !headers.includes(requiredHeader)
+    );
+
+    if (missingHeaders.length > 0) {
+      throw new Error(`Missing required columns: ${missingHeaders.join(", ")}`);
+    }
+
+    return lines.slice(1).map((line) => {
+      const values = splitCsvLine(line);
+      const row = {};
+
+      headers.forEach((header, index) => {
+        row[header] = values[index] ?? "";
+      });
+
+      return row;
+    });
+  };
+
+  const handleBulkUpload = async () => {
+    setBulkErrorMessage("");
+    setBulkStatusMessage("");
+
+    if (!csvFile) {
+      setBulkErrorMessage("Please choose a CSV file first");
+      return;
+    }
+
+    try {
+      const fileText = await csvFile.text();
+      const parsedRows = parseCsvText(fileText);
+
+      const chemicalsForUpload = parsedRows.map((row) => ({
+        name: row.name,
+        casNumber: row.casNumber,
+        quantity: Number(row.quantity),
+        unit: row.unit,
+        location: row.location,
+        supplier: row.supplier,
+        purchaseDate: row.purchaseDate,
+        expiryDate: row.expiryDate,
+        minimumStockThreshold: Number(row.minimumStockThreshold),
+        isStockedOut: String(row.isStockedOut || "").toLowerCase() === "true",
+      }));
+
+      await api.post("/chemicals/bulk", { chemicals: chemicalsForUpload }, getAuthHeader());
+
+      setBulkStatusMessage(`Imported ${chemicalsForUpload.length} chemicals successfully.`);
+      setCsvFile(null);
+      await loadChemicals();
+    } catch (error) {
+      console.log("Error importing CSV:", error);
+      setBulkErrorMessage(error.response?.data?.message || error.message || "Something went wrong importing the CSV");
     }
   };
 
@@ -130,6 +240,28 @@ function ManageChemicals() {
   return (
     <div>
       <h1>Manage Chemicals</h1>
+
+      <div className="form-box bulk-upload-box">
+        <h2>Bulk CSV Upload</h2>
+        <p>
+          Use this when you want to add many chemicals at once. The CSV file must include this
+          header row:
+        </p>
+        <pre className="csv-instructions">
+name,casNumber,quantity,unit,location,supplier,purchaseDate,expiryDate,minimumStockThreshold,isStockedOut
+        </pre>
+        <p>
+          Dates must use <strong>YYYY-MM-DD</strong>. Set <strong>isStockedOut</strong> to <strong>true</strong> or leave it blank.
+        </p>
+
+        <input type="file" accept=".csv,text/csv" onChange={(e) => setCsvFile(e.target.files?.[0] || null)} />
+        <button type="button" onClick={handleBulkUpload} disabled={!csvFile}>
+          Upload CSV
+        </button>
+
+        {bulkErrorMessage && <p className="error-message">{bulkErrorMessage}</p>}
+        {bulkStatusMessage && <p className="success-message">{bulkStatusMessage}</p>}
+      </div>
 
       <h2>{editingId ? "Edit Chemical" : "Add New Chemical"}</h2>
       <form className="form-box" onSubmit={handleSubmit}>
