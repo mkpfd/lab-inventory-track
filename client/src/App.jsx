@@ -16,10 +16,10 @@ import RegisterPage from "./pages/RegisterPage";
 // import ManageChemicals from "./pages/ManageChemicals";
 // import ReviewOrders from "./pages/ReviewOrders";
 
-// import DeptHeadDashboard from "./pages/DeptHeadDashboard";
-// import ViewChemicals from "./pages/ViewChemicals";
-// import ActivityLogPage from "./pages/ActivityLogPage";
-// import ManageUsers from "./pages/ManageUsers";
+import DeptHeadDashboard from "./pages/DeptHeadDashboard";
+import ViewChemicals from "./pages/ViewChemicals";
+import ActivityLogPage from "./pages/ActivityLogPage";
+import ManageUsers from "./pages/ManageUsers";
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -100,7 +100,7 @@ function App() {
           /> */}
 
           {/* department head pages */}
-          {/* <Route
+          <Route
             path="/depthead"
             element={
               <ProtectedRoute currentUser={currentUser} allowedRoles={["depthead"]}>
@@ -131,7 +131,7 @@ function App() {
                 <ManageUsers />
               </ProtectedRoute>
             }
-          /> */}
+          /> 
 
           {/* default route */}
           <Route path="/" element={<Navigate to="/login" />} />
